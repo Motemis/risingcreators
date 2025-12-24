@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import UnlockButton from "./UnlockButton";
+import SaveToWatchlistButton from "./SaveToWatchlistButton";
 
 export default async function CreatorDetail({
   params,
@@ -42,31 +43,34 @@ export default async function CreatorDetail({
         
         {/* Header */}
         <div className="bg-gray-800 rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center">
-              {isUnlocked ? (
-                <span className="text-3xl">👤</span>
-              ) : (
-                <span className="text-3xl blur-sm">👤</span>
-              )}
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 bg-gray-600 rounded-full flex items-center justify-center">
+                {isUnlocked ? (
+                  <span className="text-3xl">👤</span>
+                ) : (
+                  <span className="text-3xl blur-sm">👤</span>
+                )}
+              </div>
+              <div>
+                {isUnlocked ? (
+                  <>
+                    <h1 className="text-2xl font-bold text-white">
+                      {creator.display_name}
+                    </h1>
+                    <p className="text-gray-400">@{creator.username}</p>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-2xl font-bold text-white">
+                      {creator.niche} Creator
+                    </h1>
+                    <p className="text-gray-400">{creator.platform}</p>
+                  </>
+                )}
+              </div>
             </div>
-            <div>
-              {isUnlocked ? (
-                <>
-                  <h1 className="text-2xl font-bold text-white">
-                    {creator.display_name}
-                  </h1>
-                  <p className="text-gray-400">@{creator.username}</p>
-                </>
-              ) : (
-                <>
-                  <h1 className="text-2xl font-bold text-white">
-                    {creator.niche} Creator
-                  </h1>
-                  <p className="text-gray-400">{creator.platform}</p>
-                </>
-              )}
-            </div>
+            <SaveToWatchlistButton creatorId={id} brandClerkId={user.id} />
           </div>
         </div>
 
