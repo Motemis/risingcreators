@@ -1,137 +1,120 @@
-import { supabase } from "@/lib/supabase";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import QuickSaveButton from "./QuickSaveButton";
-import Filters from "./Filters";
 
-export default async function BrandDashboard({
-  searchParams,
-}: {
-  searchParams: Promise<{ platform?: string; niche?: string; minFollowers?: string; maxFollowers?: string }>;
-}) {
+export default async function BrandDashboard() {
   const user = await currentUser();
-  const params = await searchParams;
 
   if (!user) {
     redirect("/");
   }
 
-  // Fetch ALL creators first to test
-  const { data: creators, error } = await supabase
-    .from("creators")
+  // Get brand user
+  const { data: dbUser } = await supabase
+    .from("users")
     .select("*")
-    .order("followers", { ascending: false });
+    .eq("clerk_id", user.id)
+    .single();
 
-  // Log for debugging
-  console.log("Params:", params);
-  console.log("Creators:", creators);
-  console.log("Error:", error);
-
-  // Filter in JavaScript for now
-  let filteredCreators = creators || [];
-
-  if (params.platform && params.platform !== "all") {
-    filteredCreators = filteredCreators.filter(c => c.platform === params.platform);
+  // If user doesn't exist, redirect to onboarding
+  if (!dbUser || !dbUser.onboarded) {
+    redirect("/onboarding");
   }
 
-  if (params.niche && params.niche !== "all") {
-    filteredCreators = filteredCreators.filter(c => c.niche === params.niche);
+  // Verify user is a brand
+  if (dbUser.user_type !== "brand") {
+    redirect("/");
   }
 
-  if (params.minFollowers) {
-    filteredCreators = filteredCreators.filter(c => c.followers >= parseInt(params.minFollowers!));
-  }
-
-  if (params.maxFollowers) {
-    filteredCreators = filteredCreators.filter(c => c.followers <= parseInt(params.maxFollowers!));
-  }
+  // Mock stats for now
+  const stats = {
+    creatorsViewed: 24,
+    watchlistCount: 8,
+    unlockedCount: 3,
+    campaignsActive: 1,
+  };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] p-8">
+      <div className="max-w-5xl mx-auto">
         
-        {/* Header */}
+        {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Discover Creators</h1>
-          <p className="text-gray-400 mt-1">
-            Find rising creators before they blow up
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
+            Welcome back{dbUser.first_name ? `, ${dbUser.first_name}` : ""}
+          </h1>
+          <p className="text-[var(--color-text-secondary)] mt-1">
+            Here's your creator discovery overview
           </p>
         </div>
 
-        {/* Filters */}
-        <Filters 
-          currentPlatform={params.platform}
-          currentNiche={params.niche}
-          currentMinFollowers={params.minFollowers}
-          currentMaxFollowers={params.maxFollowers}
-        />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)]">
+            <p className="text-[var(--color-text-secondary)] text-sm">Creators Viewed</p>
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-1">
+              {stats.creatorsViewed}
+            </p>
+          </div>
+          <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)]">
+            <p className="text-[var(--color-text-secondary)] text-sm">In Watchlists</p>
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-1">
+              {stats.watchlistCount}
+            </p>
+          </div>
+          <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)]">
+            <p className="text-[var(--color-text-secondary)] text-sm">Unlocked</p>
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-1">
+              {stats.unlockedCount}
+            </p>
+          </div>
+          <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)]">
+            <p className="text-[var(--color-text-secondary)] text-sm">Active Campaigns</p>
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-1">
+              {stats.campaignsActive}
+            </p>
+          </div>
+        </div>
 
-        {/* Results Count */}
-        <p className="text-gray-400 mb-4">{filteredCreators.length} creators found</p>
-
-        {/* Creator Cards */}
-        <div className="space-y-4">
-          {filteredCreators.map((creator) => (
-            <div
-              key={creator.id}
-              className="bg-gray-800 rounded-xl p-6 flex justify-between items-center"
+        {/* Quick Actions */}
+        <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)] mb-8">
+          <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">
+            Quick Actions
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <Link
+              href="/dashboard/brand/discover"
+              className="bg-[var(--color-accent)] text-white px-6 py-3 rounded-lg font-medium hover:bg-[var(--color-accent-hover)] transition-colors"
             >
-              <Link
-                href={`/dashboard/brand/creator/${creator.id}`}
-                className="flex items-center gap-4 flex-1 hover:opacity-80 transition"
-              >
-                <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">👤</span>
-                </div>
-                
-                <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    {creator.niche} Creator
-                  </h3>
-                  <p className="text-gray-400">
-                    {creator.platform} · {creator.niche}
-                  </p>
-                  <div className="flex gap-4 mt-2">
-                    <span className="text-green-400 text-sm">
-                      {creator.engagement_rate}% engagement
-                    </span>
-                    <span className="text-blue-400 text-sm">
-                      Score: {creator.score}/100
-                    </span>
-                  </div>
-                </div>
-              </Link>
+              Discover Creators
+            </Link>
+            <Link
+              href="/dashboard/brand/watchlists"
+              className="bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] px-6 py-3 rounded-lg font-medium hover:bg-[var(--color-border)] transition-colors"
+            >
+              View Watchlists
+            </Link>
+            <Link
+              href="/dashboard/brand/unlocked"
+              className="bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] px-6 py-3 rounded-lg font-medium hover:bg-[var(--color-border)] transition-colors"
+            >
+              Unlocked Creators
+            </Link>
+          </div>
+        </div>
 
-              <div className="flex items-center gap-4">
-                <div className="text-right mr-4">
-                  <p className="text-2xl font-bold text-white">
-                    {creator.followers?.toLocaleString()}
-                  </p>
-                  <p className="text-gray-400 text-sm">followers</p>
-                </div>
-                
-                <QuickSaveButton creatorId={creator.id} brandClerkId={user.id} />
-                
-                <Link
-                  href={`/dashboard/brand/creator/${creator.id}`}
-                  className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700"
-                >
-                  View
-                </Link>
-              </div>
-            </div>
-          ))}
-
-          {filteredCreators.length === 0 && (
-            <div className="bg-gray-800 rounded-xl p-12 text-center">
-              <p className="text-gray-400">No creators match your filters</p>
-              <p className="text-gray-500 text-sm mt-2">Error: {error?.message || "None"}</p>
-            </div>
-          )}
+        {/* Tip */}
+        <div className="bg-[var(--color-accent-light)] border border-[var(--color-accent)] rounded-xl p-6">
+          <h2 className="text-[var(--color-accent)] font-medium mb-2">💡 Tip</h2>
+          <p className="text-[var(--color-text-secondary)]">
+            Use the Discover page to find rising creators. Add them to watchlists to track their growth, 
+            then unlock their contact info when you're ready to reach out.
+          </p>
         </div>
 
       </div>
     </div>
   );
 }
+

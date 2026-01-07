@@ -16,44 +16,84 @@ export default async function CreatorDashboard() {
     .eq("clerk_id", user.id)
     .single();
 
-  // Mock data for now — we'll connect real data later
+  // If user doesn't exist, redirect to onboarding
+  if (!dbUser || !dbUser.onboarded) {
+    redirect("/onboarding");
+  }
+
+  // Verify user is a creator
+  if (dbUser.user_type !== "creator") {
+    redirect("/");
+  }
+
+  // Get creator profile
+  const { data: profile } = await supabase
+    .from("creator_profiles")
+    .select("*")
+    .eq("user_id", dbUser.id)
+    .single();
+
+  // Calculate total followers from profile
+  const totalFollowers = profile
+    ? (profile.tiktok_followers || 0) +
+      (profile.instagram_followers || 0) +
+      (profile.youtube_subscribers || 0) +
+      (profile.twitter_followers || 0)
+    : 0;
+
+  // Get brand activity stats
+  const { count: unlockCount } = await supabase
+    .from("unlocks")
+    .select("*", { count: "exact", head: true })
+    .eq("creator_id", profile?.id);
+
+  const { count: watchlistCount } = await supabase
+    .from("watchlist_items")
+    .select("*", { count: "exact", head: true })
+    .eq("creator_id", profile?.id);
+
+  // Mock some stats for now
   const stats = {
     score: 74,
-    followers: 32847,
+    followers: totalFollowers,
     growth: 15.2,
     engagement: 7.1,
     profileViews: 12,
-    watchlistAdds: 6,
-    unlocks: 2,
+    watchlistAdds: watchlistCount || 0,
+    unlocks: unlockCount || 0,
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] p-8">
+      <div className="max-w-5xl mx-auto">
         
         {/* Welcome */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
             Welcome back, {user.firstName || "Creator"}
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-[var(--color-text-secondary)] mt-1">
             Here's how you're doing
           </p>
         </div>
 
         {/* Score Card */}
-        <div className="bg-gray-800 rounded-xl p-6 mb-6">
-          <h2 className="text-gray-400 text-sm font-medium mb-4">YOUR CREATOR SCORE</h2>
+        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <h2 className="text-[var(--color-text-tertiary)] text-sm font-medium mb-4 uppercase">
+            Your Creator Score
+          </h2>
           <div className="flex items-center gap-6">
-            <div className="text-6xl font-bold text-white">{stats.score}</div>
+            <div className="text-6xl font-bold text-[var(--color-text-primary)]">
+              {stats.score}
+            </div>
             <div>
-              <div className="text-xl text-gray-300">/100</div>
-              <div className="text-green-400 text-sm mt-1">Ready for brand deals</div>
+              <div className="text-xl text-[var(--color-text-secondary)]">/100</div>
+              <div className="text-green-500 text-sm mt-1">Ready for brand deals</div>
             </div>
           </div>
-          <div className="mt-4 bg-gray-700 rounded-full h-3">
+          <div className="mt-4 bg-[var(--color-bg-tertiary)] rounded-full h-3">
             <div 
-              className="bg-blue-500 h-3 rounded-full" 
+              className="bg-[var(--color-accent)] h-3 rounded-full transition-all" 
               style={{ width: `${stats.score}%` }}
             />
           </div>
@@ -61,50 +101,58 @@ export default async function CreatorDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-800 rounded-xl p-6">
-            <p className="text-gray-400 text-sm">Followers</p>
-            <p className="text-3xl font-bold text-white mt-1">
+          <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
+            <p className="text-[var(--color-text-tertiary)] text-sm">Followers</p>
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-1">
               {stats.followers.toLocaleString()}
             </p>
           </div>
-          <div className="bg-gray-800 rounded-xl p-6">
-            <p className="text-gray-400 text-sm">Monthly Growth</p>
-            <p className="text-3xl font-bold text-green-400 mt-1">
+          <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
+            <p className="text-[var(--color-text-tertiary)] text-sm">Monthly Growth</p>
+            <p className="text-3xl font-bold text-green-500 mt-1">
               +{stats.growth}%
             </p>
           </div>
-          <div className="bg-gray-800 rounded-xl p-6">
-            <p className="text-gray-400 text-sm">Engagement Rate</p>
-            <p className="text-3xl font-bold text-white mt-1">
+          <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
+            <p className="text-[var(--color-text-tertiary)] text-sm">Engagement Rate</p>
+            <p className="text-3xl font-bold text-[var(--color-text-primary)] mt-1">
               {stats.engagement}%
             </p>
           </div>
         </div>
 
         {/* Brand Activity */}
-        <div className="bg-gray-800 rounded-xl p-6 mb-6">
-          <h2 className="text-gray-400 text-sm font-medium mb-4">BRAND ACTIVITY THIS MONTH</h2>
+        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6 mb-6">
+          <h2 className="text-[var(--color-text-tertiary)] text-sm font-medium mb-4 uppercase">
+            Brand Activity This Month
+          </h2>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <p className="text-4xl font-bold text-white">{stats.profileViews}</p>
-              <p className="text-gray-400 text-sm mt-1">Profile Views</p>
+              <p className="text-4xl font-bold text-[var(--color-text-primary)]">
+                {stats.profileViews}
+              </p>
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1">Profile Views</p>
             </div>
             <div className="text-center">
-              <p className="text-4xl font-bold text-white">{stats.watchlistAdds}</p>
-              <p className="text-gray-400 text-sm mt-1">Watchlist Adds</p>
+              <p className="text-4xl font-bold text-[var(--color-text-primary)]">
+                {stats.watchlistAdds}
+              </p>
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1">Watchlist Adds</p>
             </div>
             <div className="text-center">
-              <p className="text-4xl font-bold text-white">{stats.unlocks}</p>
-              <p className="text-gray-400 text-sm mt-1">Unlocks</p>
+              <p className="text-4xl font-bold text-[var(--color-text-primary)]">
+                {stats.unlocks}
+              </p>
+              <p className="text-[var(--color-text-secondary)] text-sm mt-1">Unlocks</p>
             </div>
           </div>
         </div>
 
         {/* Quick Tip */}
-        <div className="bg-blue-900/30 border border-blue-800 rounded-xl p-6">
-          <h2 className="text-blue-400 font-medium mb-2">THIS WEEK'S INSIGHT</h2>
-          <p className="text-gray-300">
-            Your engagement rate is strong (7.1%) but you're posting less than similar creators. 
+        <div className="bg-[var(--color-accent-light)] border border-[var(--color-accent)] rounded-xl p-6">
+          <h2 className="text-[var(--color-accent)] font-medium mb-2">💡 This Week's Insight</h2>
+          <p className="text-[var(--color-text-secondary)]">
+            Your engagement rate is strong ({stats.engagement}%) but you're posting less than similar creators. 
             Creators in your niche who post 4x/week grow 2.3x faster.
           </p>
         </div>

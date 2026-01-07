@@ -11,25 +11,36 @@ export default async function WatchlistsPage() {
     redirect("/");
   }
 
-  // Get user's watchlists with creator count
+  // Get user's watchlists
   const { data: watchlists } = await supabase
     .from("watchlists")
-    .select(`
-      *,
-      watchlist_creators(count)
-    `)
+    .select("*")
     .eq("brand_clerk_id", user.id)
     .order("created_at", { ascending: false });
 
+  // Get counts for each watchlist
+  const watchlistsWithCounts = await Promise.all(
+    (watchlists || []).map(async (watchlist) => {
+      const { count } = await supabase
+        .from("watchlist_items")
+        .select("*", { count: "exact", head: true })
+        .eq("watchlist_id", watchlist.id);
+
+      return { ...watchlist, creatorCount: count || 0 };
+    })
+  );
+
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] p-8">
       <div className="max-w-4xl mx-auto">
         
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">My Watchlists</h1>
-            <p className="text-gray-400 mt-1">
+            <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
+              My Watchlists
+            </h1>
+            <p className="text-[var(--color-text-secondary)] mt-1">
               Track and organize creators you're interested in
             </p>
           </div>
@@ -37,37 +48,36 @@ export default async function WatchlistsPage() {
         </div>
 
         {/* Watchlists */}
-        {watchlists && watchlists.length > 0 ? (
+        {watchlistsWithCounts.length > 0 ? (
           <div className="grid gap-4">
-            {watchlists.map((watchlist) => (
+            {watchlistsWithCounts.map((watchlist) => (
               <Link
                 key={watchlist.id}
                 href={`/dashboard/brand/watchlists/${watchlist.id}`}
-                className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition block"
+                className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6 hover:border-[var(--color-accent)] transition block"
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-xl font-semibold text-white">
+                    <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">
                       {watchlist.name}
                     </h2>
-                    <p className="text-gray-400 text-sm mt-1">
-                      {watchlist.watchlist_creators?.[0]?.count || 0} creators
+                    <p className="text-[var(--color-text-secondary)] text-sm mt-1">
+                      {watchlist.creatorCount} creator{watchlist.creatorCount !== 1 ? "s" : ""}
                     </p>
                   </div>
-                  <span className="text-gray-400">→</span>
+                  <span className="text-[var(--color-text-tertiary)]">→</span>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="bg-gray-800 rounded-xl p-12 text-center">
-            <p className="text-gray-400 mb-4">No watchlists yet</p>
-            <p className="text-gray-500 text-sm">
+          <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-12 text-center">
+            <p className="text-[var(--color-text-secondary)] mb-4">No watchlists yet</p>
+            <p className="text-[var(--color-text-tertiary)] text-sm">
               Create a watchlist to start tracking creators
             </p>
           </div>
         )}
-
       </div>
     </div>
   );

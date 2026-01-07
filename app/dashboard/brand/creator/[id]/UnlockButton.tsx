@@ -19,14 +19,13 @@ export default function UnlockButton({
     setUnlocking(true);
     setError(null);
 
-    console.log("Attempting unlock:", { creatorId, brandClerkId });
-
-    const { data, error: unlockError } = await supabase.from("unlocks").insert({
-      brand_clerk_id: brandClerkId,
-      creator_id: creatorId,
-    }).select();
-
-    console.log("Unlock result:", { data, error: unlockError });
+    const { data, error: unlockError } = await supabase
+      .from("unlocks")
+      .insert({
+        brand_clerk_id: brandClerkId,
+        creator_id: creatorId,
+      })
+      .select();
 
     if (unlockError) {
       console.error("Error unlocking:", unlockError);
@@ -43,13 +42,11 @@ export default function UnlockButton({
       <button
         onClick={handleUnlock}
         disabled={unlocking}
-        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+        className="bg-[var(--color-accent)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--color-accent-hover)] disabled:opacity-50 transition-colors"
       >
-        {unlocking ? "Unlocking..." : "🔓 Unlock Creator (1 credit)"}
+        {unlocking ? "Unlocking..." : "🔓 Unlock Creator"}
       </button>
-      {error && (
-        <p className="text-red-400 mt-2 text-sm">{error}</p>
-      )}
+      {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
     </div>
   );
 }
