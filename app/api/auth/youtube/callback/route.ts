@@ -196,3 +196,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=unknown`);
   }
 }
+
+
