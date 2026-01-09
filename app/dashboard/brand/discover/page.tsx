@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { calculateEnhancedMatchScore } from "@/lib/categorize";
 import CreatorCard from "./CreatorCard";
 
 export default async function BrandDiscoverPage({
@@ -43,7 +44,7 @@ export default async function BrandDiscoverPage({
   const minFollowers = parseInt(params.minFollowers || "0");
   const maxFollowers = parseInt(params.maxFollowers || "10000000");
   const searchQuery = params.search || "";
-  const sortBy = params.sort || "brand_readiness";
+  const sortBy = params.sort || ((brandProfile?.onboarding_completed || brandProfile?.last_analyzed_at) ? "match" : "brand_readiness");
 
   // Fetch claimed creators (from creator_profiles)
   let claimedQuery = supabase
@@ -79,8 +80,14 @@ export default async function BrandDiscoverPage({
     );
   }
 
-  // Apply sort
-  if (sortBy === "brand_readiness") {
+  // Apply sort (match sorting is done after match calculation)
+  if (sortBy === "match") {
+    // Match sorting happens after we calculate scores
+    discoveredQuery = discoveredQuery.order("brand_readiness_score", {
+      ascending: false,
+      nullsFirst: false,
+    });
+  } else if (sortBy === "brand_readiness") {
     discoveredQuery = discoveredQuery.order("brand_readiness_score", {
       ascending: false,
       nullsFirst: false,
@@ -104,7 +111,7 @@ export default async function BrandDiscoverPage({
     });
   }
 
-  discoveredQuery = discoveredQuery.limit(50);
+  discoveredQuery = discoveredQuery.limit(200); // Get more to sort properly
 
   const [{ data: claimedCreators }, { data: discoveredCreators }] = await Promise.all([
     claimedQuery,
@@ -161,24 +168,47 @@ export default async function BrandDiscoverPage({
     })),
   ];
 
-  // Sort merged list
-  if (sortBy === "brand_readiness") {
-    allCreators.sort(
-      (a, b) => (b.brand_readiness_score || 0) - (a.brand_readiness_score || 0)
-    );
+  // Calculate match scores if brand has completed onboarding or has been analyzed
+  const creatorsWithMatch = allCreators.map((creator) => {
+    if (brandProfile?.onboarding_completed || brandProfile?.last_analyzed_at) {
+      const match = calculateEnhancedMatchScore(brandProfile as any, {
+        niche: creator.niche,
+        followers: creator.followers,
+        engagement_rate: creator.engagement_rate || null,
+        brand_readiness_score: creator.brand_readiness_score || null,
+        avg_views: creator.estimated_reach_monthly ? Math.round(creator.estimated_reach_monthly / 4) : null,
+        shorts_percentage: null,
+        bio: creator.bio,
+        display_name: creator.display_name,
+      });
+      return { ...creator, matchScore: match.score, matchGrade: match.grade, matchReasons: match.reasons };
+    }
+    return { ...creator, matchScore: null, matchGrade: null, matchReasons: [] };
+  });
+
+  // Sort based on selection
+  let sortedCreators = [...creatorsWithMatch];
+  if (sortBy === "match") {
+    // If onboarding not completed and no analysis, fall back to brand_readiness for match sort
+    if (brandProfile?.onboarding_completed || brandProfile?.last_analyzed_at) {
+      sortedCreators.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    } else {
+      sortedCreators.sort((a, b) => (b.brand_readiness_score || 0) - (a.brand_readiness_score || 0));
+    }
+  } else if (sortBy === "brand_readiness") {
+    sortedCreators.sort((a, b) => (b.brand_readiness_score || 0) - (a.brand_readiness_score || 0));
   } else if (sortBy === "rising_score") {
-    allCreators.sort((a, b) => (b.rising_score || 0) - (a.rising_score || 0));
+    sortedCreators.sort((a, b) => (b.rising_score || 0) - (a.rising_score || 0));
   } else if (sortBy === "followers") {
-    allCreators.sort((a, b) => b.followers - a.followers);
+    sortedCreators.sort((a, b) => b.followers - a.followers);
   } else if (sortBy === "growth") {
-    allCreators.sort(
-      (a, b) => (b.growth_rate_7d || 0) - (a.growth_rate_7d || 0)
-    );
+    sortedCreators.sort((a, b) => (b.growth_rate_7d || 0) - (a.growth_rate_7d || 0));
   } else if (sortBy === "engagement") {
-    allCreators.sort(
-      (a, b) => (b.engagement_rate || 0) - (a.engagement_rate || 0)
-    );
+    sortedCreators.sort((a, b) => (b.engagement_rate || 0) - (a.engagement_rate || 0));
   }
+
+  // Limit to 50 results AFTER sorting
+  sortedCreators = sortedCreators.slice(0, 50);
 
   // Get unique niches for filter dropdown
   const allNiches = [
@@ -296,6 +326,7 @@ export default async function BrandDiscoverPage({
               defaultValue={sortBy}
               className="px-4 py-2 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
             >
+              <option value="match">Sort: Best Match</option>
               <option value="brand_readiness">Sort: Brand Ready</option>
               <option value="rising_score">Sort: Rising Stars</option>
               <option value="followers">Sort: Most Followers</option>
@@ -314,13 +345,14 @@ export default async function BrandDiscoverPage({
 
         {/* Results Count */}
         <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-          {allCreators.length} creators found
+          {sortedCreators.length} creators found
+          {(brandProfile?.onboarding_completed || brandProfile?.last_analyzed_at) && sortBy === "match" && " • Sorted by your brand match"}
         </p>
 
         {/* Creator Grid */}
-        {allCreators.length > 0 ? (
+        {sortedCreators.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {allCreators.map((creator) => (
+            {sortedCreators.map((creator) => (
               <CreatorCard
                 key={`${creator.type}-${creator.id}`}
                 creator={creator}

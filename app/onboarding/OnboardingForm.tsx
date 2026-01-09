@@ -49,7 +49,7 @@ export default function OnboardingForm({
     if (userType === "creator") {
       window.location.href = "/dashboard/creator";
     } else {
-      window.location.href = "/dashboard/brand";
+      window.location.href = "/onboarding/brand";
     }
   };
 

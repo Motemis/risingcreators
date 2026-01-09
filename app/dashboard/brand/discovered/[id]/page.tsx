@@ -111,7 +111,7 @@ export default async function DiscoveredCreatorPage({
                       ? "bg-green-500/10 text-green-500"
                       : "bg-yellow-500/10 text-yellow-500"
                   }`}>
-                    🔥 Rising {creator.rising_score}
+                    🔥 Rising Score
                   </span>
                 )}
               </div>
