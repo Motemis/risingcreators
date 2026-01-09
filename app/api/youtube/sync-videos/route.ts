@@ -120,13 +120,21 @@ export async function POST(request: NextRequest) {
     }));
 
     // Get unique top videos across metrics
-    const topByViews = [...videos].sort((a, b) => b.views - a.views).slice(0, 5);
-    const topByLikes = [...videos].sort((a, b) => b.likes - a.likes).slice(0, 5);
-    const topByComments = [...videos].sort((a, b) => b.comments - a.comments).slice(0, 5);
+    const topByViews = [...videos].sort((a: any, b: any) => b.views - a.views).slice(0, 5);
+    const topByLikes = [...videos].sort((a: any, b: any) => b.likes - a.likes).slice(0, 5);
+    const topByComments = [...videos].sort((a: any, b: any) => b.comments - a.comments).slice(0, 5);
 
     // Combine and dedupe (keeping best rank)
     const seen = new Set<string>();
-    const topVideos: typeof videos = [];
+    const topVideos: Array<{
+      id: string;
+      title: string;
+      thumbnail: string | undefined;
+      publishedAt: string;
+      views: number;
+      likes: number;
+      comments: number;
+    }> = [];
 
     for (const video of [...topByViews, ...topByLikes, ...topByComments]) {
       if (!seen.has(video.id)) {
@@ -143,7 +151,7 @@ export async function POST(request: NextRequest) {
       .eq("platform", "YouTube");
 
     // Insert new posts
-    const posts = topVideos.map((video, index) => ({
+    const posts = topVideos.map((video: any, index: number) => ({
       creator_profile_id: creatorProfile.id,
       platform: "YouTube",
       post_url: `https://youtube.com/watch?v=${video.id}`,
