@@ -151,12 +151,20 @@ export async function GET(request: NextRequest) {
               }));
 
               // Sort and pick top videos
-              const topByViews = [...videos].sort((a, b) => b.views - a.views).slice(0, 5);
-              const topByLikes = [...videos].sort((a, b) => b.likes - a.likes).slice(0, 5);
-              const topByComments = [...videos].sort((a, b) => b.comments - a.comments).slice(0, 5);
+              const topByViews = [...videos].sort((a: any, b: any) => b.views - a.views).slice(0, 5);
+              const topByLikes = [...videos].sort((a: any, b: any) => b.likes - a.likes).slice(0, 5);
+              const topByComments = [...videos].sort((a: any, b: any) => b.comments - a.comments).slice(0, 5);
 
               const seen = new Set<string>();
-              const topVideos: typeof videos = [];
+              const topVideos: Array<{
+                id: string;
+                title: string;
+                thumbnail: string | undefined;
+                publishedAt: string;
+                views: number;
+                likes: number;
+                comments: number;
+              }> = [];
 
               for (const video of [...topByViews, ...topByLikes, ...topByComments]) {
                 if (!seen.has(video.id)) {
