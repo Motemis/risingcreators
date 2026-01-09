@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
               }
 
               // Insert posts
-              const posts = topVideos.map((video, index) => ({
+              const posts = topVideos.map((video: any, index: number) => ({
                 creator_profile_id: creatorProfile.id,
                 platform: "YouTube",
                 post_url: `https://youtube.com/watch?v=${video.id}`,
