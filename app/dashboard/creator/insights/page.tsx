@@ -326,7 +326,7 @@ export default async function CreatorInsightsPage() {
               <div className="text-3xl">🎯</div>
               <div className="flex-1">
                 <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">
-                  Your Niche: {creatorNiches.map((n) => getNicheLabel(n)).join(", ")}
+                  Your Niche: {creatorNiches.map((n: string) => getNicheLabel(n)).join(", ")}
                 </h2>
                 
                 <div className="grid md:grid-cols-3 gap-4 mb-4">

@@ -259,7 +259,7 @@ export default function CampaignDashboard({
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
-                {tiles.find(t => t.key === activeFilter)?.icon} {tiles.find(t => t.key === activeFilter)?.label} ({filteredCreators.length})
+                {tiles.find(t => t.key === activeFilter)?.label} ({filteredCreators.length})
               </h2>
               <button
                 onClick={() => setActiveFilter("all")}

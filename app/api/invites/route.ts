@@ -71,7 +71,11 @@ export async function POST(request: Request) {
     );
 
     // Try to find more info if we have a hub URL
-    let hubContact = { emails: [], socialLinks: {} };
+    let hubContact: {
+      emails: Array<{ email: string; confidence: number; source: string }>;
+      socialLinks: Record<string, string>;
+      hubUrl?: string;
+    } = { emails: [], socialLinks: {} };
     if (descriptionContact.hubUrl) {
       hubContact = await fetchHubPageLinks(descriptionContact.hubUrl);
     }
