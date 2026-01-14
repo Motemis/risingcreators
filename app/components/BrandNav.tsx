@@ -9,6 +9,8 @@ export default function BrandNav() {
   const links = [
     { href: "/dashboard/brand", label: "Dashboard" },
     { href: "/dashboard/brand/discover", label: "Discover" },
+    { href: "/dashboard/brand/campaigns", label: "Campaigns" },
+    { href: "/dashboard/brand/deals", label: "Deals" },
     { href: "/dashboard/brand/watchlists", label: "Watchlists" },
     { href: "/dashboard/brand/unlocked", label: "Unlocked" },
     { href: "/dashboard/brand/insights", label: "Insights" },

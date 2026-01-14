@@ -8,8 +8,10 @@ export default function CreatorNav() {
 
   const links = [
     { href: "/dashboard/creator", label: "Dashboard" },
-    { href: "/dashboard/creator/profile", label: "Preview Profile" },
-    { href: "/dashboard/creator/profile/edit", label: "Edit Profile" },
+    { href: "/dashboard/creator/opportunities", label: "Opportunities" },
+    { href: "/dashboard/creator/deals", label: "My Deals" },
+    { href: "/dashboard/creator/insights", label: "Insights" },
+    { href: "/dashboard/creator/profile", label: "My Profile" },
     { href: "/dashboard/creator/growth", label: "Growth" },
     { href: "/dashboard/creator/activity", label: "Activity" },
     { href: "/dashboard/creator/readiness", label: "Readiness" },

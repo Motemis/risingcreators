@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import UnlockButton from "./UnlockButton";
 import SaveToWatchlistButton from "./SaveToWatchlistButton";
+import MessageCreatorButton from "./MessageCreatorButton";
 import PostsSection from "./PostsSection";
 
 function formatFollowers(num: number): string {
@@ -112,6 +113,16 @@ export default async function CreatorDetail({
             </div>
             <SaveToWatchlistButton creatorId={id} brandClerkId={user.id} />
           </div>
+
+          {/* Action Buttons - Message when unlocked */}
+          {isUnlocked && (
+            <div className="mt-6 pt-6 border-t border-[var(--color-border)]">
+              <MessageCreatorButton 
+                creatorProfileId={id} 
+                creatorName={displayName} 
+              />
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -232,7 +243,7 @@ export default async function CreatorDetail({
         </div>
 
         {/* Contact & Rates - Gated */}
-        <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 border border-[var(--color-border)]">
+        <div className="bg-[var(--color-bg-secondary)] rounded-xl p-6 mb-6 border border-[var(--color-border)]">
           <h2 className="text-[var(--color-text-tertiary)] text-sm font-medium mb-4 uppercase">
             Contact & Rates {!isUnlocked && "🔒"}
           </h2>
@@ -242,7 +253,7 @@ export default async function CreatorDetail({
               <div>
                 <p className="text-[var(--color-text-tertiary)] text-sm">Email</p>
                 <p className="text-[var(--color-text-primary)]">
-                  {creator.users?.email || "Not provided"}
+                  {creator.contact_email || creator.users?.email || "Not provided"}
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[var(--color-border)]">
@@ -270,6 +281,14 @@ export default async function CreatorDetail({
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* Message button in contact section too */}
+              <div className="pt-4 border-t border-[var(--color-border)]">
+                <MessageCreatorButton 
+                  creatorProfileId={id} 
+                  creatorName={displayName} 
+                />
               </div>
             </div>
           ) : (

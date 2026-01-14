@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("YouTube OAuth error:", error);
-    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=youtube_denied`);
+    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=youtube_denied`);
   }
 
   if (!code || !clerkUserId) {
-    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=missing_params`);
+    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=missing_params`);
   }
 
   try {
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     if (tokens.error) {
       console.error("Token exchange error:", tokens);
-      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=token_exchange`);
+      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=token_exchange`);
     }
 
     // Fetch YouTube channel info
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     const channelData = await channelResponse.json();
 
     if (!channelData.items || channelData.items.length === 0) {
-      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=no_channel`);
+      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=no_channel`);
     }
 
     const channel = channelData.items[0];
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!dbUser) {
-      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=user_not_found`);
+      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=user_not_found`);
     }
 
     // Save or update social connection
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     if (upsertError) {
       console.error("Database error:", upsertError);
-      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=database`);
+      return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=database`);
     }
 
     // Update creator profile with YouTube data
@@ -102,8 +102,10 @@ export async function GET(request: NextRequest) {
       await supabase
         .from("creator_profiles")
         .update({
+          youtube_channel_id: channel.id,
+          youtube_handle: channel.snippet?.customUrl?.replace("@", "") || channel.snippet?.title,
           youtube_subscribers: subscriberCount,
-          youtube_url: `https://youtube.com/channel/${channel.id}`,
+          youtube_profile_image_url: channel.snippet?.thumbnails?.medium?.url || channel.snippet?.thumbnails?.default?.url,
           updated_at: new Date().toISOString(),
         })
         .eq("id", creatorProfile.id);
@@ -197,11 +199,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?success=youtube_connected`);
+    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?youtube=connected`);
 
   } catch (err) {
     console.error("YouTube OAuth error:", err);
-    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile/edit?error=unknown`);
+    return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=unknown`);
   }
 }
 

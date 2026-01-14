@@ -4,44 +4,6 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
-      {/* Navigation */}
-      <nav className="border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[var(--color-accent)] rounded-lg flex items-center justify-center text-white font-bold text-sm">
-              RC
-            </div>
-            <span className="text-xl font-bold text-[var(--color-accent)]">
-              Rising Creators
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <SignedOut>
-              <Link
-                href="/sign-in"
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/sign-up"
-                className="bg-[var(--color-accent)] text-white px-4 py-2 rounded-lg font-medium hover:bg-[var(--color-accent-hover)]"
-              >
-                Get Started Free
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              <Link
-                href="/dashboard"
-                className="bg-[var(--color-accent)] text-white px-4 py-2 rounded-lg font-medium hover:bg-[var(--color-accent-hover)]"
-              >
-                Dashboard
-              </Link>
-            </SignedIn>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <section className="py-20 px-6">
         <div className="max-w-5xl mx-auto text-center">
