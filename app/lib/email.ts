@@ -2,8 +2,10 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://risingcreators.com";
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Rising Creators <hello@risingcreators.com>";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://risingcreators.vercel.app";
+// Use Resend's test sender until domain is verified
+// This only allows sending to YOUR verified email (the one you signed up with)
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Rising Creators <onboarding@resend.dev>";
 
 type TemplateType = "interest_alert" | "direct_message" | "campaign_match" | "active_outreach";
 

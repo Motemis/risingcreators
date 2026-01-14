@@ -37,16 +37,18 @@ export default function BrandLayoutClient({
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       {/* Single Header */}
       <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] flex items-center justify-between px-6 sticky top-0 z-40">
-        <div className="flex items-center gap-8">
-          <Link href="/dashboard/brand" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[var(--color-accent)] rounded-lg flex items-center justify-center text-white font-bold text-sm">
-              RC
-            </div>
-            <span className="font-semibold text-[var(--color-text-primary)]">
-              Rising Creators
-            </span>
-          </Link>
+        {/* Logo - Left */}
+        <Link href="/dashboard/brand" className="flex items-center gap-2 shrink-0">
+          <div className="w-8 h-8 bg-[var(--color-accent)] rounded-lg flex items-center justify-center text-white font-bold text-sm">
+            RC
+          </div>
+          <span className="font-semibold text-[var(--color-text-primary)]">
+            Rising Creators
+          </span>
+        </Link>
 
+        {/* Nav + Actions - Right */}
+        <div className="flex items-center gap-6">
           {/* Horizontal Nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
@@ -70,9 +72,8 @@ export default function BrandLayoutClient({
               );
             })}
           </nav>
-        </div>
 
-        <div className="flex items-center gap-4">
+          {/* Premium Badge / Upgrade + User */}
           {isPremium ? (
             <span className="px-3 py-1 bg-green-500/10 text-green-600 text-sm font-medium rounded-full">
               Premium
