@@ -18,6 +18,7 @@ interface Creator {
   instagram_followers?: number;
   rising_score: number | null;
   growth_rate_7d: number | null;
+  growth_rate_30d?: number | null;
   platform?: string;
   platform_user_id?: string;
   engagement_rate?: number | null;
@@ -28,12 +29,30 @@ interface Creator {
   matchScore?: number | null;
   matchGrade?: string | null;
   matchReasons?: string[];
+  // New analytics fields
+  is_trending?: boolean | null;
+  estimated_post_value?: number | null;
+  estimated_cpm?: number | null;
+  audience_quality_score?: number | null;
+  viral_post_count?: number | null;
+  view_to_follower_ratio?: number | null;
 }
 
 function formatNumber(num: number): string {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
   if (num >= 1000) return (num / 1000).toFixed(1) + "K";
   return num.toString();
+}
+
+function getPlatformIcon(platform: string): string {
+  switch (platform?.toLowerCase()) {
+    case "youtube": return "🎬";
+    case "tiktok": return "📱";
+    case "instagram": return "📸";
+    case "twitch": return "🎮";
+    case "multi": return "📊";
+    default: return "📊";
+  }
 }
 
 function MatchScoreCircle({ score }: { score: number }) {
@@ -99,6 +118,35 @@ function MatchScoreCircle({ score }: { score: number }) {
   );
 }
 
+function MetricBadge({ 
+  value, 
+  label, 
+  color = "default",
+  suffix = ""
+}: { 
+  value: string | number; 
+  label: string; 
+  color?: "green" | "yellow" | "red" | "blue" | "default";
+  suffix?: string;
+}) {
+  const colorClasses = {
+    green: "text-green-500",
+    yellow: "text-yellow-500",
+    red: "text-red-500",
+    blue: "text-blue-500",
+    default: "text-[var(--color-text-primary)]",
+  };
+
+  return (
+    <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-2 text-center">
+      <p className={`text-sm font-bold ${colorClasses[color]}`}>
+        {value}{suffix}
+      </p>
+      <p className="text-xs text-[var(--color-text-tertiary)]">{label}</p>
+    </div>
+  );
+}
+
 export default function CreatorCard({
   creator,
   isPremium = false,
@@ -143,8 +191,6 @@ export default function CreatorCard({
       const data = await res.json();
       if (data.item || data.created || data.updated) {
         setWatchlistAdded(true);
-      } else if (data.error) {
-        console.error("Watchlist error:", data.error);
       }
     } catch (error) {
       console.error("Error adding to watchlist:", error);
@@ -152,12 +198,37 @@ export default function CreatorCard({
     setWatchlistLoading(false);
   };
 
+  // Determine engagement quality
+  const engagementColor = (creator.engagement_rate || 0) >= 8 ? "green" 
+    : (creator.engagement_rate || 0) >= 5 ? "yellow" 
+    : "default";
+
+  // Determine growth quality
+  const growthColor = (creator.growth_rate_7d || 0) >= 5 ? "green"
+    : (creator.growth_rate_7d || 0) >= 2 ? "yellow"
+    : (creator.growth_rate_7d || 0) < 0 ? "red"
+    : "default";
+
   return (
     <>
       <Link
         href={href}
-        className="block bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-4 hover:border-[var(--color-accent)] transition-colors"
+        className="block bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-4 hover:border-[var(--color-accent)] transition-colors relative"
       >
+        {/* Badges Row */}
+        <div className="absolute top-3 right-3 flex gap-1.5">
+          {creator.is_trending && (
+            <span className="px-2 py-0.5 bg-orange-500/10 text-orange-500 text-xs font-medium rounded-full">
+              Trending
+            </span>
+          )}
+          {(creator.viral_post_count || 0) > 0 && (
+            <span className="px-2 py-0.5 bg-purple-500/10 text-purple-500 text-xs font-medium rounded-full">
+              {creator.viral_post_count} Viral
+            </span>
+          )}
+        </div>
+
         {/* Creator Info Row with Match Score */}
         <div className="flex items-start gap-4">
           {/* Avatar */}
@@ -173,7 +244,7 @@ export default function CreatorCard({
                 className={`w-14 h-14 rounded-full bg-[var(--color-bg-tertiary)] flex items-center justify-center text-2xl ${!isPremium ? "blur-[2px]" : ""}`}
               >
                 <span className="text-[var(--color-text-tertiary)]">
-                  {creator.platform === "youtube" ? "Y" : creator.platform === "tiktok" ? "T" : creator.platform === "instagram" ? "I" : "C"}
+                  {getPlatformIcon(creator.platform || "")}
                 </span>
               </div>
             )}
@@ -184,10 +255,17 @@ export default function CreatorCard({
                 </svg>
               </div>
             )}
+            
+            {/* Platform indicator */}
+            {creator.platform && creator.platform !== "multi" && (
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-full flex items-center justify-center text-xs">
+                {getPlatformIcon(creator.platform)}
+              </div>
+            )}
           </div>
 
           {/* Name and Niches */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pr-16">
             {isPremium ? (
               <h3 className="font-semibold text-[var(--color-text-primary)] truncate">
                 {creator.display_name}
@@ -210,6 +288,11 @@ export default function CreatorCard({
                     {n}
                   </span>
                 ))}
+                {creator.niche.length > 2 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]">
+                    +{creator.niche.length - 2}
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -224,45 +307,69 @@ export default function CreatorCard({
 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-3 gap-2 mt-4">
-          <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-2 text-center">
-            <p className="text-sm font-bold text-[var(--color-text-primary)]">
-              {formatNumber(creator.followers)}
-            </p>
-            <p className="text-xs text-[var(--color-text-tertiary)]">Followers</p>
-          </div>
-          <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-2 text-center">
-            <p className="text-sm font-bold text-[var(--color-text-primary)]">
-              {creator.engagement_rate ? `${creator.engagement_rate}%` : "—"}
-            </p>
-            <p className="text-xs text-[var(--color-text-tertiary)]">Engagement</p>
-          </div>
-          <div className="bg-[var(--color-bg-tertiary)] rounded-lg p-2 text-center">
-            <p
-              className={`text-sm font-bold ${
-                (creator.growth_rate_7d || 0) > 0
-                  ? "text-green-500"
-                  : "text-[var(--color-text-primary)]"
-              }`}
-            >
-              {creator.growth_rate_7d
-                ? `${creator.growth_rate_7d > 0 ? "+" : ""}${creator.growth_rate_7d.toFixed(1)}%`
-                : "—"}
-            </p>
-            <p className="text-xs text-[var(--color-text-tertiary)]">Growth/wk</p>
-          </div>
+          <MetricBadge 
+            value={formatNumber(creator.followers)} 
+            label="Followers" 
+          />
+          <MetricBadge 
+            value={creator.engagement_rate ? creator.engagement_rate.toFixed(1) : "—"} 
+            label="Engagement"
+            color={engagementColor}
+            suffix={creator.engagement_rate ? "%" : ""}
+          />
+          <MetricBadge 
+            value={creator.growth_rate_7d ? `${creator.growth_rate_7d > 0 ? "+" : ""}${creator.growth_rate_7d.toFixed(1)}` : "—"} 
+            label="Growth/wk"
+            color={growthColor}
+            suffix={creator.growth_rate_7d ? "%" : ""}
+          />
         </div>
 
-        {/* Estimated Reach */}
-        {creator.estimated_reach_monthly && creator.estimated_reach_monthly > 0 && (
-          <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-[var(--color-text-secondary)]">Est. Monthly Reach</span>
-              <span className="font-medium text-[var(--color-text-primary)]">
-                {formatNumber(creator.estimated_reach_monthly)} views
+        {/* Secondary Metrics Row */}
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          {/* Estimated Post Value */}
+          {creator.estimated_post_value && (
+            <div className="bg-[var(--color-bg-tertiary)] rounded-lg px-3 py-2 flex items-center justify-between">
+              <span className="text-xs text-[var(--color-text-tertiary)]">Est. Value</span>
+              <span className="text-sm font-semibold text-green-500">
+                ${formatNumber(creator.estimated_post_value)}
               </span>
             </div>
-          </div>
-        )}
+          )}
+          
+          {/* Audience Quality */}
+          {creator.audience_quality_score && (
+            <div className="bg-[var(--color-bg-tertiary)] rounded-lg px-3 py-2 flex items-center justify-between">
+              <span className="text-xs text-[var(--color-text-tertiary)]">Quality</span>
+              <span className={`text-sm font-semibold ${
+                creator.audience_quality_score >= 80 ? "text-green-500" :
+                creator.audience_quality_score >= 60 ? "text-yellow-500" : "text-red-500"
+              }`}>
+                {creator.audience_quality_score}/100
+              </span>
+            </div>
+          )}
+
+          {/* Monthly Reach if no post value */}
+          {!creator.estimated_post_value && creator.estimated_reach_monthly && (
+            <div className="bg-[var(--color-bg-tertiary)] rounded-lg px-3 py-2 flex items-center justify-between">
+              <span className="text-xs text-[var(--color-text-tertiary)]">Monthly Reach</span>
+              <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                {formatNumber(creator.estimated_reach_monthly)}
+              </span>
+            </div>
+          )}
+
+          {/* View to Follower if no quality score */}
+          {!creator.audience_quality_score && creator.view_to_follower_ratio && (
+            <div className="bg-[var(--color-bg-tertiary)] rounded-lg px-3 py-2 flex items-center justify-between">
+              <span className="text-xs text-[var(--color-text-tertiary)]">View/Follow</span>
+              <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                {creator.view_to_follower_ratio.toFixed(1)}%
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Brand Readiness Score */}
         {creator.brand_readiness_score && (
@@ -288,8 +395,8 @@ export default function CreatorCard({
           </div>
         )}
 
-        {/* Action Buttons - Premium users: evenly split */}
-        {isPremium && (
+        {/* Action Buttons */}
+        {isPremium ? (
           <div className="mt-4 pt-3 border-t border-[var(--color-border)] grid grid-cols-2 gap-2">
             <button
               onClick={handleAddToWatchlist}
@@ -300,7 +407,7 @@ export default function CreatorCard({
                   : "border border-[var(--color-border)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]"
               }`}
             >
-              {watchlistLoading ? "Adding..." : watchlistAdded ? "Added to Watchlist" : "Add to Watchlist"}
+              {watchlistLoading ? "..." : watchlistAdded ? "Added" : "Watchlist"}
             </button>
             <button
               onClick={handleMessageClick}
@@ -309,10 +416,7 @@ export default function CreatorCard({
               Message
             </button>
           </div>
-        )}
-
-        {/* Non-premium users */}
-        {!isPremium && (
+        ) : (
           <div className="mt-4 pt-3 border-t border-[var(--color-border)]">
             <button
               onClick={handleAddToWatchlist}
@@ -326,7 +430,7 @@ export default function CreatorCard({
               {watchlistLoading ? "Adding..." : watchlistAdded ? "Added to Watchlist" : "Add to Watchlist"}
             </button>
             <p className="mt-2 text-center text-xs text-[var(--color-accent)]">
-              Upgrade to message creators
+              Upgrade to see full analytics and message creators
             </p>
           </div>
         )}

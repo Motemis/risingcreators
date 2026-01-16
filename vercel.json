@@ -2,11 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/auto-discover",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/update-snapshots",
-      "schedule": "0 12 * * *"
+      "schedule": "0 6,18 * * *"
     }
   ]
 }

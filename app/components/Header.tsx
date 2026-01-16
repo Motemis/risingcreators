@@ -9,9 +9,6 @@ import ThemeSwitcher from "./ThemeSwitcher";
 export default function Header() {
   const pathname = usePathname();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
-  
-  // Don't show header on homepage (it has its own nav)
-  if (pathname === "/") return null;
 
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)]">
@@ -41,6 +38,12 @@ export default function Header() {
             </SignUpButton>
           </SignedOut>
           <SignedIn>
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors"
+            >
+              Dashboard
+            </Link>
             <div className="relative">
               <button
                 onClick={() => setShowThemeMenu(!showThemeMenu)}

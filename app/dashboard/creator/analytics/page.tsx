@@ -1,11 +1,9 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import InsightsDashboard from "./InsightsDashboard";
+import AnalyticsDashboard from "./AnalyticsDashboard";
 
-const MAX_INSIGHTS_PER_DAY = 2;
-
-export default async function InsightsPage() {
+export default async function AnalyticsPage() {
   const user = await currentUser();
 
   if (!user) {
@@ -32,7 +30,7 @@ export default async function InsightsPage() {
     redirect("/onboarding/creator");
   }
 
-  // Get historical snapshots for trend analysis
+  // Get historical snapshots for trend charts (last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -43,14 +41,13 @@ export default async function InsightsPage() {
     .gte("snapshot_date", thirtyDaysAgo.toISOString().split("T")[0])
     .order("snapshot_date", { ascending: true });
 
-  // Get niche benchmarks
-  const primaryNiche = profile.niche?.[0] || "Lifestyle";
-  const totalFollowers =
+  // Get niche benchmarks for comparison
+  const primaryNiche = profile.niche?.[0] || "lifestyle";
+  const followerTier = getFollowerTier(
     (profile.youtube_subscribers || 0) +
     (profile.tiktok_followers || 0) +
-    (profile.instagram_followers || 0);
-
-  const followerTier = getFollowerTier(totalFollowers);
+    (profile.instagram_followers || 0)
+  );
 
   const { data: benchmarks } = await supabase
     .from("niche_benchmarks")
@@ -67,34 +64,12 @@ export default async function InsightsPage() {
     .order("views", { ascending: false })
     .limit(10);
 
-  // Get all previous insights
-  const { data: previousInsights } = await supabase
-    .from("creator_insights")
-    .select("*")
-    .eq("creator_profile_id", profile.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
-
-  // Count insights generated today
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const { count: insightsToday } = await supabase
-    .from("creator_insights")
-    .select("*", { count: "exact", head: true })
-    .eq("creator_profile_id", profile.id)
-    .gte("created_at", todayStart.toISOString());
-
   return (
-    <InsightsDashboard
+    <AnalyticsDashboard
       profile={profile}
       snapshots={snapshots || []}
       benchmarks={benchmarks}
       topPosts={topPosts || []}
-      previousInsights={previousInsights || []}
-      followerTier={followerTier}
-      insightsToday={insightsToday || 0}
-      maxInsightsPerDay={MAX_INSIGHTS_PER_DAY}
     />
   );
 }

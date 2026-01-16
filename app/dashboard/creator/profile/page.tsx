@@ -30,6 +30,13 @@ export default async function CreatorProfilePage() {
     redirect("/onboarding/creator");
   }
 
+  // Fetch creator's posts for featured content
+  const { data: creatorPosts } = await supabase
+    .from("creator_posts")
+    .select("*")
+    .eq("creator_profile_id", creatorProfile.id)
+    .order("views", { ascending: false });
+
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
@@ -42,7 +49,10 @@ export default async function CreatorProfilePage() {
           </p>
         </div>
 
-        <CreatorProfileEditor profile={creatorProfile} />
+        <CreatorProfileEditor 
+          profile={creatorProfile} 
+          posts={creatorPosts || []} 
+        />
       </div>
     </div>
   );

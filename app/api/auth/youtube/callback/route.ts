@@ -2,24 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
+  console.log("🎬 YouTube callback route hit!");
+  console.log("Full URL:", request.url);
+  
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const clerkUserId = searchParams.get("state");
   const error = searchParams.get("error");
 
+  console.log("Params:", { 
+    hasCode: !!code, 
+    hasState: !!clerkUserId, 
+    error: error 
+  });
+
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   if (error) {
-    console.error("YouTube OAuth error:", error);
+    console.error("❌ YouTube OAuth error from Google:", error);
     return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=youtube_denied`);
   }
 
   if (!code || !clerkUserId) {
+    console.error("❌ Missing params - code:", !!code, "state:", !!clerkUserId);
     return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=missing_params`);
   }
 
   try {
     // Exchange code for tokens
+    console.log("🔄 Exchanging code for tokens...");
+    console.log("Redirect URI:", `${baseUrl}/api/auth/youtube/callback`);
+    console.log("Client ID exists:", !!process.env.GOOGLE_CLIENT_ID);
+    console.log("Client Secret exists:", !!process.env.GOOGLE_CLIENT_SECRET);
+    
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -35,9 +50,14 @@ export async function GET(request: NextRequest) {
     const tokens = await tokenResponse.json();
 
     if (tokens.error) {
-      console.error("Token exchange error:", tokens);
+      console.error("❌ Token exchange error:");
+      console.error("Error type:", tokens.error);
+      console.error("Error description:", tokens.error_description);
+      console.error("Full response:", JSON.stringify(tokens, null, 2));
       return NextResponse.redirect(`${baseUrl}/dashboard/creator/profile?error=token_exchange`);
     }
+    
+    console.log("✅ Token exchange successful");
 
     // Fetch YouTube channel info
     const channelResponse = await fetch(
@@ -99,7 +119,11 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (creatorProfile) {
-      await supabase
+      console.log("📝 Updating creator profile with YouTube data...");
+      console.log("Channel ID:", channel.id);
+      console.log("Subscribers:", subscriberCount);
+      
+      const { error: profileUpdateError } = await supabase
         .from("creator_profiles")
         .update({
           youtube_channel_id: channel.id,
@@ -109,6 +133,12 @@ export async function GET(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", creatorProfile.id);
+      
+      if (profileUpdateError) {
+        console.error("❌ Error updating profile:", profileUpdateError);
+      } else {
+        console.log("✅ Profile updated successfully!");
+      }
     }
 
     // Auto-sync videos after connecting
@@ -186,10 +216,17 @@ export async function GET(request: NextRequest) {
                 likes: video.likes,
                 comments: video.comments,
                 posted_at: video.publishedAt,
-                is_featured: index < 5,
+                is_featured: index < 10, // Top 10 featured
               }));
 
-              await supabase.from("creator_posts").insert(posts);
+              console.log(`📹 Syncing ${posts.length} YouTube videos...`);
+              const { data: insertedPosts, error: insertError } = await supabase.from("creator_posts").insert(posts);
+              
+              if (insertError) {
+                console.error("❌ Error inserting posts:", insertError);
+              } else {
+                console.log(`✅ Successfully synced ${posts.length} videos!`);
+              }
             }
           }
         }

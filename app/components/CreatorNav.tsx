@@ -12,7 +12,7 @@ export default function CreatorNav() {
     { href: "/dashboard/creator/deals", label: "My Deals" },
     { href: "/dashboard/creator/insights", label: "Insights" },
     { href: "/dashboard/creator/profile", label: "My Profile" },
-    { href: "/dashboard/creator/growth", label: "Growth" },
+    { href: "/dashboard/creator/analytics", label: "Analytics" },
     { href: "/dashboard/creator/activity", label: "Activity" },
     { href: "/dashboard/creator/readiness", label: "Readiness" },
     { href: "/dashboard/creator/claim", label: "Claim Profiles" },

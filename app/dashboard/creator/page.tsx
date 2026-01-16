@@ -218,7 +218,7 @@ export default async function CreatorDashboardPage() {
                 Brand Readiness
               </h3>
               <Link
-                href="/dashboard/creator/readiness"
+                href="/dashboard/creator/insights"
                 className="text-sm text-[var(--color-accent)] hover:underline"
               >
                 Improve score →

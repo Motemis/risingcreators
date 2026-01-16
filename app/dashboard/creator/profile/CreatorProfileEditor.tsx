@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { NICHE_CATEGORIES, getNicheLabel } from "@/lib/niches";
 import ImageUploader from "@/components/ImageUploader";
 import { getIndustryRates, calculateFallbackRates, CreatorRates } from "@/lib/rateBenchmarks";
+import FeaturedContentManager from "./FeaturedContentManager";
 
 interface CreatorProfile {
   id: string;
@@ -35,15 +36,19 @@ interface CreatorProfile {
   media_kit_url: string | null;
   open_to_collaborations: boolean;
   past_brands: string[] | null;
-  featured_content: any[] | null;
 }
 
-interface FeaturedVideo {
+interface Post {
   id: string;
-  title: string;
-  thumbnail: string;
-  views: number;
-  url: string;
+  platform: string;
+  post_url: string;
+  thumbnail_url: string | null;
+  caption: string | null;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  posted_at: string | null;
+  is_featured: boolean | null;
 }
 
 function formatNumber(num: number): string {
@@ -60,7 +65,13 @@ const DEFAULT_HEADERS = [
   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=300&fit=crop",
 ];
 
-export default function CreatorProfileEditor({ profile }: { profile: CreatorProfile }) {
+export default function CreatorProfileEditor({ 
+  profile, 
+  posts 
+}: { 
+  profile: CreatorProfile;
+  posts: Post[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [saving, setSaving] = useState(false);
@@ -72,10 +83,9 @@ export default function CreatorProfileEditor({ profile }: { profile: CreatorProf
   const fileInputRef = useRef<HTMLInputElement>(null);
   const headerInputRef = useRef<HTMLInputElement>(null);
 
-  // Show success message if YouTube just connected
+  // Clean up URL params after YouTube connection
   useEffect(() => {
     if (searchParams.get("youtube") === "connected") {
-      alert("YouTube connected successfully!");
       router.replace("/dashboard/creator/profile");
     }
   }, [searchParams, router]);
@@ -255,9 +265,6 @@ export default function CreatorProfileEditor({ profile }: { profile: CreatorProf
     "w-full px-4 py-2 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent text-sm";
 
   const profileImage = form.profile_photo_url || profile.youtube_profile_image_url;
-
-  // Mock featured content (in production, this would come from YouTube API)
-  const featuredContent: FeaturedVideo[] = profile.featured_content || [];
 
   return (
     <div className="space-y-6">
@@ -459,44 +466,7 @@ export default function CreatorProfileEditor({ profile }: { profile: CreatorProf
       </div>
 
       {/* Featured Content */}
-      {(profile.youtube_channel_id || featuredContent.length > 0) && (
-        <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
-          <h3 className="font-semibold text-[var(--color-text-primary)] mb-4">Featured Content</h3>
-          {featuredContent.length > 0 ? (
-            <div className="grid grid-cols-3 gap-4">
-              {featuredContent.slice(0, 6).map((video: FeaturedVideo) => (
-                <a
-                  key={video.id}
-                  href={video.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group"
-                >
-                  <div className="relative aspect-video rounded-lg overflow-hidden mb-2">
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                  </div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)] line-clamp-2">
-                    {video.title}
-                  </p>
-                  <p className="text-xs text-[var(--color-text-tertiary)]">
-                    {formatNumber(video.views)} views
-                  </p>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-[var(--color-text-tertiary)]">
-              <p className="mb-2">No featured content yet</p>
-              <p className="text-sm">Connect your YouTube to automatically showcase your best videos</p>
-            </div>
-          )}
-        </div>
-      )}
+      <FeaturedContentManager posts={posts} />
 
       {/* Content Niches */}
       <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-6">
@@ -693,7 +663,19 @@ export default function CreatorProfileEditor({ profile }: { profile: CreatorProf
                 )}
               </div>
             </div>
-            {!profile.youtube_channel_id && (
+            {profile.youtube_channel_id ? (
+              <button
+                onClick={async () => {
+                  if (confirm("Disconnect YouTube? This will remove your videos.")) {
+                    await fetch("/api/auth/youtube/disconnect", { method: "POST" });
+                    window.location.reload();
+                  }
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600"
+              >
+                Disconnect
+              </button>
+            ) : (
               <a
                 href="/api/auth/youtube"
                 className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600"
