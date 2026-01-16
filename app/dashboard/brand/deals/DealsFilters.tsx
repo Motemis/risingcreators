@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 export default function DealsFilters({ campaigns }: { campaigns: { id: string; name: string }[] }) {
   const router = useRouter();
@@ -31,12 +32,12 @@ export default function DealsFilters({ campaigns }: { campaigns: { id: string; n
       </select>
 
       {(statusFilter !== "all" || campaignFilter) && (
-        <a
+        <Link
           href="/dashboard/brand/deals"
           className="px-4 py-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
         >
           Clear filters
-        </a>
+        </Link>
       )}
     </div>
   );
