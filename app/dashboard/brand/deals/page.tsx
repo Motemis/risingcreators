@@ -13,8 +13,9 @@ function formatNumber(num: number): string {
 export default async function BrandDealsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; campaign?: string };
+  searchParams: Promise<{ status?: string; campaign?: string }>;
 }) {
+  const params = await searchParams;
   const user = await currentUser();
 
   if (!user) {
@@ -73,22 +74,22 @@ export default async function BrandDealsPage({
       ),
       discovered_creator:discovered_creators(
         id,
-        channel_title,
+        display_name,
         profile_image_url,
-        subscriber_count
+        followers
       )
     `)
     .eq("campaign.brand_profile_id", brandProfile.id)
     .order("added_at", { ascending: false });
 
   // Apply filters
-  const statusFilter = searchParams.status || "all";
+  const statusFilter = params.status || "all";
   if (statusFilter !== "all") {
     query = query.eq("status", statusFilter);
   }
 
-  if (searchParams.campaign) {
-    query = query.eq("campaign_id", searchParams.campaign);
+  if (params.campaign) {
+    query = query.eq("campaign_id", params.campaign);
   }
 
   const { data: deals } = await query;
@@ -165,7 +166,7 @@ export default async function BrandDealsPage({
           </div>
         </div>
 
-        {/* Pipeline View - Updated with "interested" */}
+        {/* Pipeline View */}
         <div className="grid grid-cols-6 gap-3 mb-8">
           {[
             { value: "interested", label: "Interested", icon: "🙋" },
@@ -180,7 +181,7 @@ export default async function BrandDealsPage({
             return (
               <Link
                 key={status.value}
-                href={`/dashboard/brand/deals?status=${status.value}${searchParams.campaign ? `&campaign=${searchParams.campaign}` : ""}`}
+                href={`/dashboard/brand/deals?status=${status.value}${params.campaaign=${params.campaign}` : ""}`}
                 className={`p-3 rounded-xl text-center transition-colors ${
                   isActive
                     ? "bg-[var(--color-accent)] text-white"
@@ -206,13 +207,13 @@ export default async function BrandDealsPage({
         {deals && deals.length > 0 ? (
           <div className="space-y-4">
             {deals.map((deal) => {
-              const creatorName = deal.creator_profile?.display_name || deal.discovered_creator?.channel_title || "Unknown";
+              const creatorName = deal.creator_profile?.display_name || deal.discovered_creator?.display_name || "Unknown";
               const creatorImage = deal.creator_profile?.profile_photo_url || deal.creator_profile?.youtube_profile_image_url || deal.discovered_creator?.profile_image_url;
               const followers = deal.creator_profile
                 ? (deal.creator_profile.youtube_subscribers || 0) +
                   (deal.creator_profile.tiktok_followers || 0) +
                   (deal.creator_profile.instagram_followers || 0)
-                : deal.discovered_creator?.subscriber_count || 0;
+                : deal.discovered_creator?.followers || 0;
 
               return (
                 <div
@@ -225,7 +226,6 @@ export default async function BrandDealsPage({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
-                      {/* Creator Avatar */}
                       {creatorImage ? (
                         <img
                           src={creatorImage}
@@ -245,7 +245,7 @@ export default async function BrandDealsPage({
                           </h3>
                           {getStatusBadge(deal.status)}
                           {deal.status === "interested" && (
-                            <span className="text-xs text-purple-500 font-medium">
+                            <span cssName="text-xs text-purple-500 font-medium">
                               🔔 Wants to work with you!
                             </span>
                           )}
@@ -263,7 +263,7 @@ export default async function BrandDealsPage({
                             {deal.creator_profile.contact_email}
                           </p>
                         )}
-                      </div>
+                      v>
                     </div>
 
                     <div className="text-right">
@@ -282,7 +282,6 @@ export default async function BrandDealsPage({
                     </div>
                   </div>
 
-                  {/* Deal Details */}
                   {(deal.deliverables_agreed || deal.notes) && (
                     <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
                       {deal.deliverables_agreed && (
@@ -298,7 +297,6 @@ export default async function BrandDealsPage({
                     </div>
                   )}
 
-                  {/* Timeline */}
                   <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex items-center gap-6 text-xs text-[var(--color-text-tertiary)]">
                     <span>Added {new Date(deal.added_at).toLocaleDateString()}</span>
                     {deal.contacted_at && (
@@ -312,7 +310,6 @@ export default async function BrandDealsPage({
                     )}
                   </div>
 
-                  {/* Actions */}
                   <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex gap-2">
                     <Link
                       href={`/dashboard/brand/deals/${deal.id}`}
@@ -321,7 +318,7 @@ export default async function BrandDealsPage({
                       {deal.status === "interested" ? "Review & Respond" : "Manage Deal"}
                     </Link>
                     {deal.creator_profile?.contact_email && (
-                      <a
+                      
                         href={`mailto:${deal.creator_profile.contact_email}`}
                         className="px-4 py-2 border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg text-sm font-medium hover:bg-[var(--color-bg-tertiary)]"
                       >
@@ -347,7 +344,7 @@ export default async function BrandDealsPage({
               className="inline-block bg-[var(--color-accent)] text-white px-6 py-3 rounded-lg font-medium hover:bg-[var(--color-accent-hover)]"
             >
               View Campaigns
-            </Link>
+            Link>
           </div>
         )}
       </div>
