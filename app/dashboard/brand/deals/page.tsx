@@ -42,14 +42,12 @@ export default async function BrandDealsPage({
     redirect("/onboarding/brand");
   }
 
-  // Get all campaigns for filter dropdown
   const { data: campaigns } = await supabase
     .from("campaigns")
     .select("id, name")
     .eq("brand_profile_id", brandProfile.id)
     .order("created_at", { ascending: false });
 
-  // Build query for deals
   let query = supabase
     .from("campaign_creators")
     .select(`
@@ -82,7 +80,6 @@ export default async function BrandDealsPage({
     .eq("campaign.brand_profile_id", brandProfile.id)
     .order("added_at", { ascending: false });
 
-  // Apply filters
   const statusFilter = params.status || "all";
   if (statusFilter !== "all") {
     query = query.eq("status", statusFilter);
@@ -94,7 +91,6 @@ export default async function BrandDealsPage({
 
   const { data: deals } = await query;
 
-  // Calculate stats
   const stats = {
     total: deals?.length || 0,
     interested: deals?.filter((d) => d.status === "interested").length || 0,
@@ -128,7 +124,6 @@ export default async function BrandDealsPage({
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
             Deal Tracker
@@ -138,7 +133,6 @@ export default async function BrandDealsPage({
           </p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl p-4">
             <p className="text-sm text-[var(--color-text-tertiary)]">Total</p>
@@ -166,7 +160,6 @@ export default async function BrandDealsPage({
           </div>
         </div>
 
-        {/* Pipeline View */}
         <div className="grid grid-cols-6 gap-3 mb-8">
           {[
             { value: "interested", label: "Interested", icon: "🙋" },
@@ -181,7 +174,7 @@ export default async function BrandDealsPage({
             return (
               <Link
                 key={status.value}
-                href={`/dashboard/brand/deals?status=${status.value}${params.campaaign=${params.campaign}` : ""}`}
+                href={`/dashboard/brand/deals?status=${status.value}${params.campaign ? `&campaign=${params.campaign}` : ""}`}
                 className={`p-3 rounded-xl text-center transition-colors ${
                   isActive
                     ? "bg-[var(--color-accent)] text-white"
@@ -200,10 +193,8 @@ export default async function BrandDealsPage({
           })}
         </div>
 
-        {/* Filters */}
         <DealsFilters campaigns={campaigns || []} />
 
-        {/* Deals List */}
         {deals && deals.length > 0 ? (
           <div className="space-y-4">
             {deals.map((deal) => {
@@ -245,7 +236,7 @@ export default async function BrandDealsPage({
                           </h3>
                           {getStatusBadge(deal.status)}
                           {deal.status === "interested" && (
-                            <span cssName="text-xs text-purple-500 font-medium">
+                            <span className="text-xs text-purple-500 font-medium">
                               🔔 Wants to work with you!
                             </span>
                           )}
@@ -263,7 +254,7 @@ export default async function BrandDealsPage({
                             {deal.creator_profile.contact_email}
                           </p>
                         )}
-                      v>
+                      </div>
                     </div>
 
                     <div className="text-right">
@@ -318,7 +309,7 @@ export default async function BrandDealsPage({
                       {deal.status === "interested" ? "Review & Respond" : "Manage Deal"}
                     </Link>
                     {deal.creator_profile?.contact_email && (
-                      
+                      <a
                         href={`mailto:${deal.creator_profile.contact_email}`}
                         className="px-4 py-2 border border-[var(--color-border)] text-[var(--color-text-primary)] rounded-lg text-sm font-medium hover:bg-[var(--color-bg-tertiary)]"
                       >
@@ -344,7 +335,7 @@ export default async function BrandDealsPage({
               className="inline-block bg-[var(--color-accent)] text-white px-6 py-3 rounded-lg font-medium hover:bg-[var(--color-accent-hover)]"
             >
               View Campaigns
-            Link>
+            </Link>
           </div>
         )}
       </div>
